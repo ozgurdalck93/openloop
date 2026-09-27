@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenLoopParserResponse",
+  "type": "object",
+  "required": [
+    "loops"
+  ],
+  "properties": {
+    "loops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "next_action_owner",
+          "classification_confidence",
+          "timing_confidence",
+          "entity_confidence"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "task",
+              "waiting",
+              "event",
+              "promise",
+              "return_later",
+              "reference"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "active",
+              "waiting",
+              "scheduled",
+              "snoozed",
+              "resolved",
+              "archived"
+            ]
+          },
+          "raw_context": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "next_action_owner": {
+            "enum": [
+              "user",
+              "other",
+              "system",
+              "none"
+            ]
+          },
+          "entity_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expected_event": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "next_review_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO-8601"
+          },
+          "closing_condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "follow_up_policy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "classification_confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "timing_confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "entity_confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "needs_user_confirmation": {
+            "type": "boolean"
+          },
+          "confirmation_question": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

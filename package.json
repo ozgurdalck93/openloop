@@ -1,0 +1,43 @@
+{
+  "name": "openloop",
+  "main": "expo-router/entry",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.app.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "expo lint",
+    "e2e:web": "node scripts/web-runtime/run.mjs"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.16",
+    "expo": "~57.0.25",
+    "expo-constants": "~57.0.19",
+    "expo-crypto": "~57.0.3",
+    "expo-dev-client": "~57.0.19",
+    "expo-linking": "~57.0.11",
+    "expo-notifications": "~57.0.21",
+    "expo-router": "~57.0.23",
+    "expo-sqlite": "~57.0.3",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "puppeteer-core": "^25.12.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.2"
+  }
+}
