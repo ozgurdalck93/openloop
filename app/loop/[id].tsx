@@ -8,6 +8,7 @@ import { FlashBanner } from '@/components/FlashBanner';
 import { Screen } from '@/components/Screen';
 import { DoneSheet } from '@/components/sheets/DoneSheet';
 import { EditSheet } from '@/components/sheets/EditSheet';
+import { FollowUpDraftSheet } from '@/components/sheets/FollowUpDraftSheet';
 import { SnoozeSheet } from '@/components/sheets/SnoozeSheet';
 import { availableActions, timelineLabel, type LoopAction } from '@/engine/suggestions';
 import { EngineError, type LoopEdits, type WaitingOptions } from '@/engine/transitions';
@@ -22,7 +23,12 @@ import { useLoopService } from '@/store/services';
 import { colors, hairline, loopTypeMeta, radius, spacing } from '@/theme';
 import { formatWhen } from '@/utils/format';
 
-type Sheet = { kind: 'done' } | { kind: 'snooze'; action: 'remind_later' | 'bring_back_later' } | { kind: 'edit' } | null;
+type Sheet =
+  | { kind: 'done' }
+  | { kind: 'snooze'; action: 'remind_later' | 'bring_back_later' }
+  | { kind: 'edit' }
+  | { kind: 'follow-up' }
+  | null;
 
 function stateLine(loop: Loop, s: Strings): string {
   const st = s.detail.state;
@@ -121,6 +127,7 @@ export default function LoopDetail() {
 
   const onAction = (action: LoopAction) => {
     if (action === 'edit') return setSheet({ kind: 'edit' });
+    if (action === 'follow_up') return setSheet({ kind: 'follow-up' });
     if (action === 'remind_later' || action === 'bring_back_later') return setSheet({ kind: 'snooze', action });
     return void run(() => service.perform(id, action));
   };
@@ -286,6 +293,15 @@ export default function LoopDetail() {
               return { ...outcome, focusLoopId: null };
             })
           }
+        />
+      ) : null}
+      {bundle && sheet?.kind === 'follow-up' ? (
+        <FollowUpDraftSheet
+          loop={bundle.loop}
+          lang={lang}
+          busy={busy}
+          onClose={() => setSheet(null)}
+          onCreate={(draft) => void run(() => service.perform(id, 'follow_up', { said: draft }))}
         />
       ) : null}
     </Screen>

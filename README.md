@@ -23,7 +23,7 @@ The tests use Node's built-in `node:sqlite` (Node 22.13+; developed on Node 24).
 
 ## Status
 
-Every phase in `06_OPENLOOP_CLAUDE_CODE_MASTER_PROMPT.md` is implemented: capture, editable Review, Home, loop detail with per-type actions, the TASK → WAITING "Does this end here?" flow, notification categories/actions, and natural-language updates to existing loops. 555 tests pass (pure logic + real SQL via `node:sqlite`); `npm run typecheck` and `npm run lint` are clean.
+Every phase in `06_OPENLOOP_CLAUDE_CODE_MASTER_PROMPT.md` is implemented: capture, editable Review, Home, loop detail with per-type actions, the TASK → WAITING "Does this end here?" flow, notification categories/actions, and natural-language updates to existing loops. 571 tests pass (pure logic + real SQL via `node:sqlite`); `npm run typecheck` and `npm run lint` are clean. (`server/` — the AI parser backend — is a separate package with its own 11 tests; see `server/README.md`.)
 
 | Area | State |
 |---|---|
@@ -37,8 +37,8 @@ Every phase in `06_OPENLOOP_CLAUDE_CODE_MASTER_PROMPT.md` is implemented: captur
 | UI language (English/Turkish) | done — follows the device locale, with an EN/TR switch on Home; see "known limitation" below |
 | Notifications — categories, planning, scheduling, response handling | done at the service level; **native delivery and action buttons not run on a device** (see below) |
 | Natural-language updates to existing loops | done |
-| Voice capture | not built — the button is visible but disabled, per the UX flow |
-| AI parser | not built — `LoopParser` is ready to take one; v0.1 ships the deterministic local parser only |
+| Voice capture | built — on-device speech-to-text feeds the same editable Capture input; requires a development build and microphone permission |
+| AI parser | built — `AiLoopParser` + `HybridLoopParser` (`src/parser/`) call a small backend (`server/`) that holds the Anthropic key; the app falls back to the local parser on any failure. **Not verified against a real deployed server or real Claude output** — only against mocked responses; see `server/README.md` |
 
 ### What works today
 
@@ -48,6 +48,10 @@ Every phase in `06_OPENLOOP_CLAUDE_CODE_MASTER_PROMPT.md` is implemented: captur
 - Finishing a TASK asks "Does this end here?" — "Yes, done" resolves it; "I'm waiting for something" opens an editable form (entity, expected response, review time) and creates a linked WAITING loop. However that WAITING loop's own follow-up ends (resolved, dismissed, or completed as a task), the original loop returns to WAITING — it never vanishes.
 - Typing about something you already have updates it instead of creating a duplicate: "Refund came", "para geldi", "still no reply", "hala cevap yok" match the right loop and propose an update ("Zara refund resolved? [Confirm] [Choose another]"); several equally-likely loops make the app ask which one; words that name nothing ("they sent it", "next month instead") let the user choose from what's open; something specific that matches no open loop changes **nothing** and says so. New capture and updates can be typed in the same breath — the update clauses are matched, the rest goes through the normal parser.
 - The full acceptance pass (capture three loops → Review → Home sections → restart → per-type actions → follow-ups → natural-language update) runs end to end in a real browser against real SQLite — see below.
+- Capture can optionally go through an AI parser instead of (well, in front of) the local one: `server/` is a small Express backend that holds `ANTHROPIC_API_KEY` and returns loop candidates in the same wire shape the local parser already speaks; `src/parser/hybridParser.ts` tries it first and silently falls back to the local parser on any failure, so the app never hard-depends on it being up. Off by default — set `EXPO_PUBLIC_AI_PARSER_URL` to turn it on. See `server/README.md`.
+- **Browse** is the app's memory: search all loops by title, note, person or company; tap a person/company to see its related open and closed loops; inspect completed history and saved reference notes. Reference notes remain quiet on Home but are no longer hidden.
+- A calm **Today** line on Home gives a short count-based check-in without urgency or guilt.
+- **Follow up** now starts with an editable message draft. It never sends anything: choosing “Add follow-up to my list” only creates the linked task, and keeps the draft in that task's context for the user to use when ready.
 
 ## Runtime verification
 
@@ -61,6 +65,7 @@ There is no Android emulator, no iOS simulator, and (Windows, no Mac) no way to 
 - Actual OS notification delivery, and — most importantly — **notification action buttons** (Done / 15 min later / Still waiting / Got a reply / Follow up, etc.) reaching `useNotificationResponses` and updating the right loop. This is Acceptance Flow 5; it cannot run in a browser.
 - Background/killed-app notification scheduling and delivery.
 - `npx expo-doctor` and a native (Android/iOS) bundle export were not run in this pass, to avoid risking further disk pressure; both are quick to run once there's headroom.
+- **The AI parser has never called the real Claude API.** `server/` typechecks, its schema-validation tests pass, and `src/parser/aiParser.test.ts` / `hybridParser.test.ts` pass against mocked HTTP responses — but nobody has run `server/npm run dev` with a real `ANTHROPIC_API_KEY` and sent it real capture text yet. Do that (and sanity-check a few English + Turkish captures against `04_OPENLOOP_AI_OUTPUT_SCHEMA.json` expectations) before relying on it.
 
 ## Decisions made this pass
 

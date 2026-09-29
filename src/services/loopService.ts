@@ -32,6 +32,7 @@ import {
   followUp,
   isPendingFollowUp,
   rescheduleLoop,
+  repeatTask,
   resolveLoop,
   snoozeLoop,
   stillWaiting,
@@ -237,7 +238,7 @@ export function createLoopService(deps: ServiceDeps): LoopService {
         break;
       }
       case 'follow_up':
-        result = followUp(loop, ctx);
+        result = followUp(loop, ctx, args.said);
         message = s.followUpAdded;
         break;
       case 'act_now':
@@ -293,9 +294,9 @@ export function createLoopService(deps: ServiceDeps): LoopService {
         return done(s.backToWaiting(bundle.parent?.entityName ?? null), result);
       }
       if ('endsHere' in how) {
-        const result = resolveLoop(bundle.loop, ctx, withSaid('Marked done', how.said));
+        const result = repeatTask(bundle.loop, ctx) ?? resolveLoop(bundle.loop, ctx, withSaid('Marked done', how.said));
         await commit(result, ctx);
-        return done(s.done, result);
+        return done(bundle.loop.followUpPolicy?.startsWith('repeat_') ? s.movedTo(formatWhen(new Date(result.updated[0].nextReviewAt as string), ctx.now, lang)) : s.done, result);
       }
       const result = completeTaskAndWait(bundle.loop, ctx, how.waiting);
       await commit(result, ctx);

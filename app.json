@@ -8,7 +8,11 @@
     "scheme": "openloop",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "app.openloop.dev"
+      "bundleIdentifier": "app.openloop.dev",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "app.openloop.dev",
@@ -32,6 +36,13 @@
         "expo-notifications",
         {
           "color": "#3F6B57"
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "OpenLoop uses the microphone to turn what you say into a capture.",
+          "speechRecognitionPermission": "OpenLoop uses speech recognition to turn what you say into a capture."
         }
       ]
     ],

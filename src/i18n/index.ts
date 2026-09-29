@@ -46,6 +46,26 @@ export interface Strings {
   nothingLeft: string;
   fixFirst: string;
   back: string;
+  browse: {
+    cta: string;
+    title: string;
+    searchPlaceholder: string;
+    all: string;
+    people: string;
+    history: string;
+    references: string;
+    noResults: string;
+    clearPerson: string;
+    openCount: (n: number) => string;
+  };
+  daily: { title: string; quiet: string; active: (n: number) => string };
+  followUpDraft: {
+    title: string;
+    intro: (entity: string) => string;
+    label: string;
+    create: string;
+    cancel: string;
+  };
   updates: {
     confirm: string;
     chooseAnother: string;
@@ -63,6 +83,7 @@ export interface Strings {
     emptyHeading: string;
     emptyBody: string;
     cta: string;
+    rate: string;
     sections: Record<HomeSection, string>;
     summary: { needsYou: (n: number) => string; waiting: (n: number) => string; comingUp: (n: number) => string };
   };
@@ -72,6 +93,10 @@ export interface Strings {
     cta: string;
     ctaBusy: string;
     voiceCta: string;
+    voiceListening: string;
+    voiceUnavailable: string;
+    voicePermissionDenied: string;
+    voiceError: string;
     nothingFoundHint: string;
   };
   review: {
@@ -201,6 +226,30 @@ const STRINGS: Record<UiLang, Strings> = {
     nothingLeft: 'Nothing left to keep.',
     fixFirst: 'A couple of things need fixing first.',
     back: 'Back',
+    browse: {
+      cta: 'Browse',
+      title: 'Your loops',
+      searchPlaceholder: 'Search a person, company, or loop',
+      all: 'All',
+      people: 'People',
+      history: 'History',
+      references: 'Notes',
+      noResults: 'Nothing matches that yet.',
+      clearPerson: 'All people',
+      openCount: (n) => (n === 1 ? '1 open loop' : `${n} open loops`),
+    },
+    daily: {
+      title: 'TODAY',
+      quiet: 'Nothing needs your attention right now.',
+      active: (n) => (n === 1 ? 'There is 1 open thing for you to hold lightly.' : `There are ${n} open things for you to hold lightly.`),
+    },
+    followUpDraft: {
+      title: 'Draft a follow-up',
+      intro: (entity) => `A draft for ${entity}. You stay in control of sending it.`,
+      label: 'Message',
+      create: 'Add follow-up to my list',
+      cancel: 'Not now',
+    },
     updates: {
       confirm: 'Confirm',
       chooseAnother: 'Choose another',
@@ -218,6 +267,7 @@ const STRINGS: Record<UiLang, Strings> = {
       emptyHeading: 'Nothing is asking you to keep it in your head right now.',
       emptyBody: 'Tell me a task, something you’re waiting for, or something you want brought back later.',
       cta: 'Tell me what’s going on',
+      rate: 'Rate OpenLoop',
       sections: { needs_you: 'NEEDS YOU', waiting: 'WAITING', coming_up: 'COMING UP', bring_back_later: 'BRING BACK LATER' },
       summary: {
         needsYou: (n) => (n === 1 ? '1 needs you' : `${n} need you`),
@@ -231,7 +281,11 @@ const STRINGS: Record<UiLang, Strings> = {
         'HR said they’d reply this week, I need to call the dentist tomorrow, and I want to look at that jacket again after payday…',
       cta: 'Make sense of this',
       ctaBusy: 'Finding what’s still open…',
-      voiceCta: 'Speak instead — coming soon',
+      voiceCta: 'Speak instead',
+      voiceListening: 'Listening… tap to stop',
+      voiceUnavailable: 'Voice capture isn’t available on this device.',
+      voicePermissionDenied: 'OpenLoop needs microphone access to hear you. You can turn it on in Settings.',
+      voiceError: 'Didn’t catch that — try again, or type it in.',
       nothingFoundHint: 'I couldn’t find anything still open in that. Try saying what happened, or what you’re waiting for.',
     },
     review: {
@@ -409,6 +463,30 @@ const STRINGS: Record<UiLang, Strings> = {
     nothingLeft: 'Kaydedilecek bir şey kalmadı.',
     fixFirst: 'Önce birkaç şeyin düzeltilmesi gerekiyor.',
     back: 'Geri',
+    browse: {
+      cta: 'Gözat',
+      title: 'Konuların',
+      searchPlaceholder: 'Kişi, kurum veya konu ara',
+      all: 'Tümü',
+      people: 'Kişiler',
+      history: 'Geçmiş',
+      references: 'Notlar',
+      noResults: 'Henüz bununla eşleşen bir şey yok.',
+      clearPerson: 'Tüm kişiler',
+      openCount: (n) => (n === 1 ? '1 açık konu' : `${n} açık konu`),
+    },
+    daily: {
+      title: 'BUGÜN',
+      quiet: 'Şu an ilgini gerektiren bir şey yok.',
+      active: (n) => (n === 1 ? 'Aklında hafifçe tutabileceğin 1 açık konu var.' : `Aklında hafifçe tutabileceğin ${n} açık konu var.`),
+    },
+    followUpDraft: {
+      title: 'Takip mesajı taslağı',
+      intro: (entity) => `${entity} için bir taslak. Göndermek her zaman senin kontrolünde.`,
+      label: 'Mesaj',
+      create: 'Takibi listeme ekle',
+      cancel: 'Şimdi değil',
+    },
     updates: {
       confirm: 'Onayla',
       chooseAnother: 'Başka seç',
@@ -426,6 +504,7 @@ const STRINGS: Record<UiLang, Strings> = {
       emptyHeading: 'Şu an aklında tutman gereken hiçbir şey yok.',
       emptyBody: 'Bana bir görevi, beklediğin bir şeyi ya da sonra hatırlamak istediğin bir şeyi anlat.',
       cta: 'Neler oluyor, anlat',
+      rate: 'OpenLoop’u değerlendir',
       sections: { needs_you: 'SANA KALDI', waiting: 'BEKLEMEDE', coming_up: 'YAKINDA', bring_back_later: 'SONRA BAK' },
       summary: {
         needsYou: (n) => (n === 1 ? '1 şey sana kaldı' : `${n} şey sana kaldı`),
@@ -439,7 +518,11 @@ const STRINGS: Record<UiLang, Strings> = {
         'İK bu hafta dönüş yapacağını söyledi, yarın dişçiyi aramam lazım, bir de maaş gününden sonra o montu tekrar bakmak istiyorum…',
       cta: 'Bunu anlamlandır',
       ctaBusy: 'Neyin açık kaldığına bakılıyor…',
-      voiceCta: 'Bunun yerine konuş — yakında',
+      voiceCta: 'Bunun yerine konuş',
+      voiceListening: 'Dinliyorum… durdurmak için dokun',
+      voiceUnavailable: 'Bu cihazda sesli kayıt kullanılamıyor.',
+      voicePermissionDenied: 'OpenLoop’un seni duyabilmesi için mikrofon izni gerekiyor. Ayarlar’dan açabilirsin.',
+      voiceError: 'Anlayamadım — tekrar dene ya da yazarak gir.',
       nothingFoundHint: 'Bunda hâlâ açık bir şey bulamadım. Ne olduğunu ya da neyi beklediğini söylemeyi dene.',
     },
     review: {

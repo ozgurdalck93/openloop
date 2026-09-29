@@ -1,0 +1,51 @@
+workflows:
+  ios-testflight:
+    name: OpenLoop iOS TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      # Existing Team settings → Integrations → App Store Connect key.
+      app_store_connect: app_store_connect_key
+    environment:
+      vars:
+        BUNDLE_ID: app.openloop.dev
+        XCODE_WORKSPACE: OpenLoop.xcworkspace
+        XCODE_SCHEME: OpenLoop
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Validate TypeScript
+        script: npm run typecheck
+      - name: Generate iOS project from Expo config
+        script: npx expo prebuild --platform ios --non-interactive --clean
+      - name: Install CocoaPods dependencies
+        script: cd ios && pod install
+      - name: Create or fetch App Store signing files
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles --custom-export-options='{"testFlightInternalTestingOnly": true}'
+      - name: Set a unique TestFlight build number
+        script: |
+          cd ios
+          agvtool new-version -all "$BUILD_NUMBER"
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/ios/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+      email:
+        recipients:
+          - h4z88s5mhv@privaterelay.appleid.com
+        notify:
+          success: true
+          failure: true

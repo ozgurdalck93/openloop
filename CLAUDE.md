@@ -15,6 +15,8 @@ npm run e2e:web     # real Chrome + Expo Router web build + real (WASM) sqlite �
 npx expo-doctor
 ```
 
+`server/` (the AI parser backend) is a separate package, excluded from all of the above — `cd server && npm run typecheck && npm test`. See `server/README.md`.
+
 Install Expo-managed packages with `npx expo install <pkg>`, never `npm i`. Before touching any Expo/RN API, check the SDK 57 docs (`https://docs.expo.dev/versions/v57.0.0/`) — APIs here differ from older releases. Run typecheck, lint and tests before calling work done.
 
 ## Layers (dependencies point downward only)
@@ -26,14 +28,17 @@ src/store       React context / in-memory handoff between screens
 src/notifications  index.ts talks to the OS; plan.ts + categories.ts are pure
 src/db          Db interface (types.ts), migrations, repositories, apply.ts
 src/engine      state machine — PURE (types, followUpPolicy, transitions, suggestions, sections)
-src/parser      text → LoopCandidate[] — PURE, deterministic, behind the LoopParser interface
+src/parser      text → LoopCandidate[], behind the LoopParser interface. localParser.ts is PURE/deterministic;
+                aiParser.ts + hybridParser.ts call out to server/ and fall back to local on failure
 src/updates     natural-language updates to EXISTING loops — PURE (intent, match, interpret) + apply.ts (goes through LoopService)
 src/services    LoopService — the one place any action (button, notification, typed update) turns into a stored transition
 src/utils       time (local calendar), format, id
+server/         separate Node/Express package: holds ANTHROPIC_API_KEY for the AI parser, nothing else. Own
+                package.json/tsconfig/tests — excluded from root typecheck/lint. See server/README.md
 ```
 
 - **The engine is pure.** Transitions take loops + `EngineContext {now, newId}` and return an `EngineResult` (created / updated / events). They never touch storage, the OS or the clock. `db/apply.ts` persists a result atomically; `notifications` re-syncs reminders from the loops it touched. Keep it that way — it is why the engine is testable and deterministic.
-- **The parser is pure and offline.** No network, no API key in the app, ever. A future AI parser plugs in behind `LoopParser` (`parser/index.ts` → `createParser`) and must return the contract in `04_OPENLOOP_AI_OUTPUT_SCHEMA.json` (`parser/aiSchema.ts` validates it).
+- **The local parser is pure and offline.** No network, no API key in the app, ever. `createParser()` (`parser/index.ts`) always returns it. An AI parser now plugs in behind the same `LoopParser` interface and returns the contract in `04_OPENLOOP_AI_OUTPUT_SCHEMA.json` (`parser/aiSchema.ts` validates it): `parser/aiParser.ts`'s `AiLoopParser` calls `server/` (a small Express backend that holds `ANTHROPIC_API_KEY` — never the app), and `parser/hybridParser.ts`'s `HybridLoopParser` wraps it with the local parser as a fallback on any failure, so `createHybridParser()` (what Capture actually uses) still works with no backend deployed. See `server/README.md`.
 - **`src/updates` never touches a loop on its own.** `interpretInput(text, openLoops, now)` (pure) turns a typed sentence into `UpdateProposal`s — matched by scoring each candidate loop's entity/title/concept/context against the clause's words (`match.ts`), never by guessing. The hard rule: one loop clearly fits → still shown for the user to confirm; several fit about equally, or the words name nothing → the user chooses; the words name something no open loop matches → nothing changes, and it's reported (`unmatched`), never silently applied to the nearest-sounding loop. `apply.ts` carries out a confirmed proposal through the same `LoopService` every button uses, so it is transactional and lands in the timeline in the user's own words (`withSaid`).
 - **`db/types.ts` has no native imports.** Repositories depend on the `Db` interface; `db/index.ts` adapts expo-sqlite; tests adapt `node:sqlite` (`test/nodeSqliteDb.ts`) so SQL is exercised for real.
 - **Migrations are append-only** (`PRAGMA user_version`). Enum columns have no CHECK constraints on purpose; validate in `db/loops.ts`.

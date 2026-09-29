@@ -94,3 +94,20 @@ export function daysInMonth(year: number, monthIndex: number): number {
 export function toIso(d: Date): string {
   return d.toISOString();
 }
+
+/**
+ * ISO-8601 in the device's local time, with an explicit UTC offset (e.g.
+ * "2026-09-29T18:16:00+03:00") instead of `Z`. Unlike `toIso`, this keeps the
+ * wall-clock time a person would read on their own device — used to tell the
+ * AI parser backend "now" so it can reason in local calendar time rather than UTC.
+ */
+export function toLocalIsoWithOffset(d: Date): string {
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  const offsetMinutes = -d.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMinutes);
+  const offset = `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${date}T${time}${offset}`;
+}

@@ -1,4 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
+import * as StoreReview from 'expo-store-review';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -8,10 +9,13 @@ import { FlashBanner } from '@/components/FlashBanner';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { LoopRow } from '@/components/LoopRow';
 import { Screen } from '@/components/Screen';
+import { listLoops } from '@/db/loops';
 import { groupForHome, summarizeHome, type HomeSection } from '@/engine/sections';
 import type { Loop } from '@/engine/types';
 import { strings } from '@/i18n';
+import { weeklyCheckIn } from '@/insights/weekly';
 import { useChangeVersion } from '@/store/changes';
+import { useDatabase } from '@/store/database';
 import { useLanguage } from '@/store/language';
 import { useLoopService } from '@/store/services';
 import { spacing } from '@/theme';
@@ -20,10 +24,12 @@ const SECTION_KEYS: HomeSection[] = ['needs_you', 'waiting', 'coming_up', 'bring
 
 export default function Home() {
   const service = useLoopService();
+  const db = useDatabase();
   const version = useChangeVersion();
   const { lang } = useLanguage();
   const s = strings(lang);
   const [loops, setLoops] = useState<Loop[] | null>(null);
+  const [allLoops, setAllLoops] = useState<Loop[] | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   // Reload when Home comes back into focus, and whenever any loop changed (even from a notification button).
@@ -31,10 +37,11 @@ export default function Home() {
     useCallback(() => {
       void version; // a change anywhere re-creates this callback, which re-runs the focus effect
       let current = true;
-      service.listOpen().then(
-        (open) => {
+      Promise.all([service.listOpen(), listLoops(db)]).then(
+        ([open, all]) => {
           if (!current) return;
           setLoops(open);
+          setAllLoops(all);
           setNow(new Date());
         },
         (error) => console.warn('Could not load loops', error),
@@ -42,15 +49,36 @@ export default function Home() {
       return () => {
         current = false;
       };
-    }, [service, version]),
+    }, [db, service, version]),
   );
 
   const groups = loops ? groupForHome(loops, now) : null;
   const summary = groups ? summarizeHome(groups, lang) : '';
   const empty = groups !== null && summary === '' && groups.bring_back_later.length === 0;
+  const weekly = allLoops ? weeklyCheckIn(allLoops, now) : null;
+  const rateApp = async () => {
+    if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
+  };
 
   return (
-    <Screen scroll footer={<Button testID="capture-cta" label={s.home.cta} onPress={() => router.push('/capture')} />}>
+    <Screen
+      scroll
+      footer={
+        <View style={styles.footer}>
+          <Button testID="capture-cta" label={s.home.cta} onPress={() => router.push('/capture')} />
+          <Button label={s.browse.cta} variant="secondary" onPress={() => router.push('/browse')} />
+          <Pressable accessibilityRole="button" onPress={() => router.push('/timeline')} style={styles.rate}>
+            <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Zaman görünümü' : 'Time view'}</AppText>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/data')} style={styles.rate}>
+            <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Verilerim ve yedek' : 'My data & backup'}</AppText>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => void rateApp()} style={styles.rate}>
+            <AppText variant="caption" tone="muted">{s.home.rate}</AppText>
+          </Pressable>
+        </View>
+      }
+    >
       <View style={styles.header}>
         <AppText variant="title">{s.home.title}</AppText>
         <LanguageSwitch />
@@ -61,6 +89,25 @@ export default function Home() {
         </AppText>
       ) : null}
       <FlashBanner />
+
+      {groups ? (
+        <View style={styles.daily}>
+          <AppText variant="label" tone="muted">{s.daily.title}</AppText>
+          <AppText tone="muted">
+            {summary ? s.daily.active(groups.needs_you.length + groups.waiting.length + groups.coming_up.length) : s.daily.quiet}
+          </AppText>
+        </View>
+      ) : null}
+      {weekly ? (
+        <View style={styles.weekly}>
+          <AppText variant="label" tone="muted">{lang === 'tr' ? 'SON 7 GÜN' : 'LAST 7 DAYS'}</AppText>
+          <AppText tone="muted">
+            {lang === 'tr'
+              ? `${weekly.closed} konu kapandı · ${weekly.waiting} konu beklemede · ${weekly.needsAttention} konu sana kaldı`
+              : `${weekly.closed} closed · ${weekly.waiting} waiting · ${weekly.needsAttention} need you`}
+          </AppText>
+        </View>
+      ) : null}
 
       {empty ? (
         <View style={styles.empty}>
@@ -107,5 +154,9 @@ const styles = StyleSheet.create({
   summary: { marginTop: spacing.xs },
   empty: { marginTop: spacing.huge, gap: spacing.md },
   section: { marginTop: spacing.xxl, gap: spacing.sm },
+  daily: { marginTop: spacing.xl, gap: spacing.xs },
+  weekly: { marginTop: spacing.lg, gap: spacing.xs },
+  footer: { gap: spacing.sm },
+  rate: { alignSelf: 'center', padding: spacing.sm },
   devLink: { marginTop: spacing.xxl, alignSelf: 'center' },
 });

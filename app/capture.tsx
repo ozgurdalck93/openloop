@@ -1,17 +1,24 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { getDeviceLocale, strings } from '@/i18n';
-import { analyzeText, createParser } from '@/parser';
+import { getDeviceLocale, strings, type Strings } from '@/i18n';
+import { analyzeText, createHybridParser } from '@/parser';
 import { useLanguage } from '@/store/language';
 import { setPendingReview } from '@/store/pendingReview';
 import { useLoopService } from '@/store/services';
 import { colors, hairline, radius, spacing, typography } from '@/theme';
 import { interpretInput } from '@/updates/interpret';
+import { useVoiceCapture, type VoiceStatus } from '@/voice/useVoiceCapture';
+
+const VOICE_HINT: Partial<Record<VoiceStatus, keyof Strings['capture']>> = {
+  unavailable: 'voiceUnavailable',
+  'permission-denied': 'voicePermissionDenied',
+  error: 'voiceError',
+};
 
 export default function Capture() {
   const service = useLoopService();
@@ -20,6 +27,23 @@ export default function Capture() {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [nothingFound, setNothingFound] = useState(false);
+  const voice = useVoiceCapture(lang);
+  const voiceBaseText = useRef('');
+
+  useEffect(() => {
+    if (voice.status !== 'listening') return;
+    setText(voiceBaseText.current ? `${voiceBaseText.current} ${voice.transcript}` : voice.transcript);
+  }, [voice.status, voice.transcript]);
+
+  const toggleVoice = () => {
+    if (voice.status === 'listening') {
+      voice.stop();
+      return;
+    }
+    voiceBaseText.current = text.trim();
+    setNothingFound(false);
+    void voice.start();
+  };
 
   const makeSense = async () => {
     const raw = text.trim();
@@ -33,7 +57,12 @@ export default function Capture() {
       // Only the leftover text goes to the capture parser, so an update clause never also becomes a new loop.
       const openLoops = await service.listOpen();
       const interpretation = interpretInput(raw, openLoops, now, { locale });
-      const result = await analyzeText(createParser({ locale }), interpretation.remainder, now);
+      const parser = createHybridParser({
+        locale,
+        aiBaseUrl: process.env.EXPO_PUBLIC_AI_PARSER_URL,
+        aiClientKey: process.env.EXPO_PUBLIC_AI_PARSER_CLIENT_KEY,
+      });
+      const result = await analyzeText(parser, interpretation.remainder, now);
       const nothingToShow =
         result.candidates.length === 0 &&
         result.clarifications.length === 0 &&
@@ -58,10 +87,14 @@ export default function Capture() {
             <Button
               label={busy ? s.capture.ctaBusy : s.capture.cta}
               onPress={makeSense}
-              disabled={busy || text.trim().length === 0}
+              disabled={busy || voice.status === 'listening' || text.trim().length === 0}
             />
-            {/* Voice is planned; the button is visible per the UX flow but not wired yet. */}
-            <Button label={s.capture.voiceCta} variant="secondary" disabled onPress={() => undefined} />
+            <Button
+              label={voice.status === 'listening' ? s.capture.voiceListening : s.capture.voiceCta}
+              variant="secondary"
+              disabled={busy}
+              onPress={toggleVoice}
+            />
           </>
         }
       >
@@ -84,6 +117,11 @@ export default function Capture() {
         {nothingFound ? (
           <AppText tone="muted" style={styles.hint}>
             {s.capture.nothingFoundHint}
+          </AppText>
+        ) : null}
+        {VOICE_HINT[voice.status] ? (
+          <AppText tone="muted" style={styles.hint}>
+            {s.capture[VOICE_HINT[voice.status]!]}
           </AppText>
         ) : null}
       </Screen>

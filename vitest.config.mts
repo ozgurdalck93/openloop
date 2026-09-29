@@ -10,5 +10,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    // This suite exercises real SQLite. Keeping files serial avoids exhausting
+    // memory-constrained development and CI environments with forked workers.
+    fileParallelism: false,
+    maxWorkers: 1,
   },
 });

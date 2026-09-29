@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -26,6 +27,7 @@ export function EditSheet({ loop, now, lang, busy, onClose, onSave }: EditSheetP
   const [entity, setEntity] = useState(loop.entityName ?? '');
   const [note, setNote] = useState(loop.rawContext ?? '');
   const [reviewAt, setReviewAt] = useState<Date | null>(loop.nextReviewAt ? new Date(loop.nextReviewAt) : null);
+  const [repeatEvery, setRepeatEvery] = useState<'weekly' | 'monthly' | null>(loop.followUpPolicy === 'repeat_weekly' ? 'weekly' : loop.followUpPolicy === 'repeat_monthly' ? 'monthly' : null);
 
   const canSchedule = loop.type !== 'reference' && !isSteppedAside(loop);
   const originalIso = loop.nextReviewAt;
@@ -57,6 +59,14 @@ export function EditSheet({ loop, now, lang, busy, onClose, onSave }: EditSheetP
           ) : null}
         </>
       ) : null}
+      {loop.type === 'task' ? (
+        <View style={{ gap: 8 }}>
+          <AppText variant="label" tone="muted">{lang === 'tr' ? 'TEKRAR' : 'REPEAT'}</AppText>
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            {([null, 'weekly', 'monthly'] as const).map((value) => <Pressable key={value ?? 'none'} onPress={() => setRepeatEvery(value)}><AppText tone={repeatEvery === value ? 'accent' : 'muted'}>{value === null ? (lang === 'tr' ? 'Yok' : 'None') : value === 'weekly' ? (lang === 'tr' ? 'Haftalık' : 'Weekly') : (lang === 'tr' ? 'Aylık' : 'Monthly')}</AppText></Pressable>)}
+          </View>
+        </View>
+      ) : null}
       <TextField testID="edit-note" label={s.field.note} value={note} onChangeText={setNote} multiline />
       <Button
         testID="edit-save"
@@ -67,6 +77,7 @@ export function EditSheet({ loop, now, lang, busy, onClose, onSave }: EditSheetP
             title,
             entityName: entity,
             rawContext: note,
+            repeatEvery,
             // Only send a time the user actually changed: an overdue loop's old time is history, not a request.
             ...(timeChanged && reviewAt ? { reviewAt } : {}),
           })

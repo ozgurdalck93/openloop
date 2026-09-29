@@ -279,7 +279,7 @@ export function completeTaskAndWait(task: Loop, ctx: EngineContext, options: Wai
 // ---- WAITING → FOLLOW-UP TASK → WAITING ----------------------------------------------------------
 
 /** "Follow up": a linked TASK appears; the waiting loop steps aside (it is the user's move now) but stays traceable. */
-export function followUp(waiting: Loop, ctx: EngineContext): EngineResult {
+export function followUp(waiting: Loop, ctx: EngineContext, draft?: string): EngineResult {
   requireType(waiting, 'waiting', 'follow up');
   requireOpen(waiting, 'follow up');
   requireNotSteppedAside(waiting, 'follow up again');
@@ -289,7 +289,7 @@ export function followUp(waiting: Loop, ctx: EngineContext): EngineResult {
     captureId: waiting.captureId,
     type: 'task',
     title: waiting.entityName ? `Follow up with ${waiting.entityName}` : `Follow up: ${waiting.title}`,
-    rawContext: waiting.rawContext,
+    rawContext: draft ? `${waiting.rawContext ? `${waiting.rawContext}\n\n` : ''}${draft}` : waiting.rawContext,
     entityName: waiting.entityName,
     nextReviewAt: suggestion.at ? toIso(suggestion.at) : null,
     closingCondition: 'You mark it done',
@@ -474,6 +474,8 @@ export interface LoopEdits {
   closingCondition?: string | null;
   /** A new review time, in the future. */
   reviewAt?: Date;
+  /** A lightweight repeating task cadence, stored with its existing follow-up policy. */
+  repeatEvery?: 'weekly' | 'monthly' | null;
 }
 
 const FIELD_LABELS = { title: 'title', entityName: 'person or company', rawContext: 'note', closingCondition: 'closing condition' } as const;
@@ -502,6 +504,10 @@ export function editLoop(loop: Loop, edits: LoopEdits, ctx: EngineContext): Engi
   if (edits.entityName !== undefined) set('entityName', edits.entityName?.trim() || null);
   if (edits.rawContext !== undefined) set('rawContext', edits.rawContext?.trim() ? edits.rawContext : null);
   if (edits.closingCondition !== undefined) set('closingCondition', edits.closingCondition?.trim() || null);
+  if (edits.repeatEvery !== undefined) {
+    const policy = edits.repeatEvery ? `repeat_${edits.repeatEvery}` : statedPolicy(loop.type);
+    if (loop.followUpPolicy !== policy) { changes.followUpPolicy = policy; changed.push('repeat'); }
+  }
 
   const events: LoopEvent[] = [];
   const reviewChanged = edits.reviewAt !== undefined && toIso(edits.reviewAt) !== loop.nextReviewAt;
@@ -526,6 +532,15 @@ export function editLoop(loop: Loop, edits: LoopEdits, ctx: EngineContext): Engi
     events.push(eventFor(ctx, loop.id, 'rescheduled', `Moved to ${whenNote(toIso(edits.reviewAt), ctx)}`));
   }
   return { created: [], updated: [touched(loop, ctx, changes)], events };
+}
+
+/** A repeated task stays open and moves forward; it never creates a duplicate. */
+export function repeatTask(loop: Loop, ctx: EngineContext): EngineResult | null {
+  if (loop.type !== 'task' || (loop.followUpPolicy !== 'repeat_weekly' && loop.followUpPolicy !== 'repeat_monthly')) return null;
+  const next = new Date(ctx.now);
+  if (loop.followUpPolicy === 'repeat_weekly') next.setDate(next.getDate() + 7);
+  else next.setMonth(next.getMonth() + 1);
+  return { created: [], updated: [touched(loop, ctx, { status: 'scheduled', nextActionOwner: 'user', nextReviewAt: toIso(next) })], events: [eventFor(ctx, loop.id, 'rescheduled', `Repeats ${loop.followUpPolicy === 'repeat_weekly' ? 'weekly' : 'monthly'} — next ${whenNote(toIso(next), ctx)}`)] };
 }
 
 // ---- what "Done" means for a given task ------------------------------------------------------------------
