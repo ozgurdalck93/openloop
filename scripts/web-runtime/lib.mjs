@@ -97,7 +97,10 @@ export async function openApp(url, { userDataDir, shots, lang = 'en-US' }) {
     userDataDir,
     // --lang sets the browser locale, which is what Intl (and so the app's locale detection) reports.
     args: ['--no-first-run', '--disable-gpu', '--disable-extensions', '--disable-background-networking', `--lang=${lang}`],
-    defaultViewport: { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+    // Store screenshots: SHOT_VIEWPORT=428x926x3 renders 1284×2778 (an accepted App Store size).
+    defaultViewport: (({ w, h, s }) => ({ width: w, height: h, deviceScaleFactor: s, isMobile: true, hasTouch: true }))(
+      Object.fromEntries(['w', 'h', 's'].map((k, i) => [k, Number((process.env.SHOT_VIEWPORT ?? '390x844x2').split('x')[i])])),
+    ),
   });
   const page = await browser.newPage();
   await page.setExtraHTTPHeaders({ 'Accept-Language': lang });
@@ -113,6 +116,9 @@ export async function openApp(url, { userDataDir, shots, lang = 'en-US' }) {
     if (r.status() >= 400) problems.push(`http ${r.status()}: ${r.url()}`);
   });
   await page.goto(url, { waitUntil: 'networkidle2' });
+  // A fresh profile lands on the first-launch welcome; skip it so flows start at Home.
+  const skip = await page.waitForSelector('[data-testid="welcome-skip"]', { timeout: 4000 }).catch(() => null);
+  if (skip) await skip.click();
 
   return {
     browser,

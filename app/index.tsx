@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
@@ -10,6 +10,7 @@ import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { LoopRow } from '@/components/LoopRow';
 import { Screen } from '@/components/Screen';
 import { listLoops } from '@/db/loops';
+import { getSetting } from '@/db/settings';
 import { groupForHome, summarizeHome, type HomeSection } from '@/engine/sections';
 import type { Loop } from '@/engine/types';
 import { strings } from '@/i18n';
@@ -51,6 +52,20 @@ export default function Home() {
       };
     }, [db, service, version]),
   );
+
+  // First launch: show the short welcome once.
+  useEffect(() => {
+    let current = true;
+    getSetting(db, 'onboarded').then(
+      (value) => {
+        if (current && value === null) router.replace('/welcome');
+      },
+      (error) => console.warn('Could not read the welcome flag', error),
+    );
+    return () => {
+      current = false;
+    };
+  }, [db]);
 
   const groups = loops ? groupForHome(loops, now) : null;
   const summary = groups ? summarizeHome(groups, lang) : '';
