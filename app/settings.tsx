@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
+import { expoNotificationsApi } from '@/notifications/expoApi';
 import { DEFAULT_QUIET_HOURS, type QuietHours } from '@/notifications/quietHours';
 import { loadQuietHours, saveQuietHours } from '@/notifications/quietHoursStore';
 import { useDatabase } from '@/store/database';
@@ -22,6 +23,31 @@ export default function Settings() {
   const { scheduler } = useServices();
   const tr = lang === 'tr';
   const [quiet, setQuiet] = useState<QuietHours>(DEFAULT_QUIET_HOURS);
+  const [permission, setPermission] = useState<{ granted: boolean; canAskAgain: boolean } | null>(null);
+
+  // The user can change this in iOS Settings while we're in the background, so re-read on return.
+  useEffect(() => {
+    if (!expoNotificationsApi.supported) return;
+    let current = true;
+    const refresh = () => void expoNotificationsApi.getPermission().then((p) => current && setPermission(p), () => undefined);
+    refresh();
+    const subscription = AppState.addEventListener('change', (state) => state === 'active' && refresh());
+    return () => {
+      current = false;
+      subscription.remove();
+    };
+  }, []);
+
+  const allowNotifications = async () => {
+    if (permission?.canAskAgain) {
+      const granted = await expoNotificationsApi.requestPermission().catch(() => false);
+      setPermission(await expoNotificationsApi.getPermission());
+      // Reminders that couldn't be scheduled earlier (permission was missing) get scheduled now.
+      if (granted) await scheduler.resyncAll(new Date(), lang).catch((error) => console.warn('Reminder resync failed', error));
+    } else {
+      void Linking.openSettings();
+    }
+  };
 
   useEffect(() => {
     let current = true;
@@ -44,6 +70,28 @@ export default function Settings() {
   return (
     <Screen scroll footer={<Button label={tr ? 'Geri' : 'Back'} variant="secondary" onPress={() => router.back()} />}>
       <AppText variant="title">{tr ? 'Ayarlar' : 'Settings'}</AppText>
+
+      {permission ? (
+        <View style={styles.block}>
+          <AppText variant="label" tone="muted">{tr ? 'BİLDİRİMLER' : 'NOTIFICATIONS'}</AppText>
+          {permission.granted ? (
+            <AppText testID="notif-on">{tr ? '✓ Bildirimler açık. Hatırlatmalar zamanı gelince görünür.' : '✓ Notifications are on. Reminders appear when their time comes.'}</AppText>
+          ) : (
+            <>
+              <AppText tone="muted">
+                {tr
+                  ? 'Bildirimler kapalı, bu yüzden hatırlatmalar gelmez. Kayıtların yine de Ana ekranda görünür.'
+                  : 'Notifications are off, so reminders won’t arrive. Your items still show on Home.'}
+              </AppText>
+              <Button
+                testID="notif-allow"
+                label={permission.canAskAgain ? (tr ? 'Bildirimlere izin ver' : 'Allow notifications') : tr ? 'iPhone Ayarlarını aç' : 'Open iPhone Settings'}
+                onPress={() => void allowNotifications()}
+              />
+            </>
+          )}
+        </View>
+      ) : null}
 
       <View style={styles.block}>
         <AppText variant="label" tone="muted">{tr ? 'SESSİZ SAATLER' : 'QUIET HOURS'}</AppText>

@@ -88,9 +88,6 @@ export default function Home() {
           <Pressable accessibilityRole="button" onPress={() => router.push('/data')} style={styles.rate}>
             <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Verilerim ve yedek' : 'My data & backup'}</AppText>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.rate}>
-            <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Ayarlar' : 'Settings'}</AppText>
-          </Pressable>
           <Pressable accessibilityRole="button" onPress={() => void rateApp()} style={styles.rate}>
             <AppText variant="caption" tone="muted">{s.home.rate}</AppText>
           </Pressable>
@@ -99,7 +96,12 @@ export default function Home() {
     >
       <View style={styles.header}>
         <AppText variant="title">{s.home.title}</AppText>
-        <LanguageSwitch />
+        <View style={styles.headerActions}>
+          <Pressable testID="open-settings" accessibilityRole="button" accessibilityLabel={lang === 'tr' ? 'Ayarlar' : 'Settings'} onPress={() => router.push('/settings')} style={styles.settingsBtn}>
+            <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Ayarlar' : 'Settings'}</AppText>
+          </Pressable>
+          <LanguageSwitch />
+        </View>
       </View>
       {summary ? (
         <AppText tone="muted" style={styles.summary} testID="summary">
@@ -169,6 +171,8 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
+  headerActions: { alignItems: 'flex-end', gap: spacing.sm },
+  settingsBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm },
   summary: { marginTop: spacing.xs },
   empty: { marginTop: spacing.huge, gap: spacing.md },
   section: { marginTop: spacing.xxl, gap: spacing.sm },
