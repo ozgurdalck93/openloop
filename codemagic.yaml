@@ -7,6 +7,11 @@ workflows:
       # Existing Team settings → Integrations → App Store Connect key.
       app_store_connect: app_store_connect_key
     environment:
+      # Same Codemagic-managed signing as the DROPIT workflow: Codemagic owns the
+      # distribution certificate and (re)creates the App Store profile for this App ID.
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.openloop.dev
       vars:
         BUNDLE_ID: app.openloop.dev
         XCODE_WORKSPACE: OpenLoop.xcworkspace
@@ -20,12 +25,8 @@ workflows:
         script: npx expo prebuild --platform ios --non-interactive --clean
       - name: Install CocoaPods dependencies
         script: cd ios && pod install
-      - name: Create or fetch App Store signing files
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
+      - name: Apply App Store signing profile
+        script: xcode-project use-profiles
       - name: Set a unique TestFlight build number
         script: |
           cd ios
