@@ -13,6 +13,8 @@ import type { EngineResult, Loop } from '@/engine/types';
 import type { UiLang } from '@/i18n';
 
 import { planNotification } from './plan';
+import { applyQuietHours } from './quietHours';
+import { loadQuietHours } from './quietHoursStore';
 
 export interface ScheduleRequest {
   title: string;
@@ -59,12 +61,14 @@ export function createScheduler(
       const plan = api.supported ? planNotification(loop, now, lang) : null;
       if (plan && (await api.getPermission()).granted) {
         await api.setUp(lang);
+        // Quiet hours hold the reminder back; the loop's own review time is untouched.
+        const fireAt = applyQuietHours(plan.fireAt, await loadQuietHours(db));
         id = await api.schedule({
           title: plan.title,
           body: plan.body,
           categoryIdentifier: plan.categoryIdentifier,
           data: plan.data,
-          fireAt: plan.fireAt,
+          fireAt,
         });
       }
       if (id !== loop.notificationId) await setNotificationId(db, loop.id, id);
