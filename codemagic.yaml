@@ -29,7 +29,9 @@ workflows:
       - name: Set a unique TestFlight build number
         script: |
           cd ios
-          agvtool new-version -all "$BUILD_NUMBER"
+          # App Store Connect already has build 1. Codemagic's counter starts at
+          # 1, so offset it to keep every upload strictly higher.
+          agvtool new-version -all "$((BUILD_NUMBER + 1))"
       - name: Build signed IPA
         script: |
           xcode-project build-ipa \
