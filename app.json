@@ -11,7 +11,8 @@
       "bundleIdentifier": "app.openloop.dev",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "OpenLoop does not read your photos. This message is only shown if a system component asks for photo access."
       }
     },
     "android": {
