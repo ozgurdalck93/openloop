@@ -12,7 +12,9 @@ import { listLoops } from '@/db/loops';
 import { getSetting } from '@/db/settings';
 import { groupForHome, summarizeHome, type HomeSection } from '@/engine/sections';
 import type { Loop } from '@/engine/types';
-import { strings } from '@/i18n';
+import { SAMPLE_TEXT } from '@/examples/sampleLoops';
+import { getDeviceLocale, strings } from '@/i18n';
+import { parseText } from '@/parser/localParser';
 import { weeklyCheckIn } from '@/insights/weekly';
 import { useChangeVersion } from '@/store/changes';
 import { useDatabase } from '@/store/database';
@@ -70,6 +72,12 @@ export default function Home() {
   const summary = groups ? summarizeHome(groups, lang) : '';
   const empty = groups !== null && summary === '' && groups.bring_back_later.length === 0;
   const weekly = allLoops ? weeklyCheckIn(allLoops, now) : null;
+  // Keeps the sample sentences through the normal parser and service — real, editable items.
+  const addExample = async () => {
+    const at = new Date();
+    const text = SAMPLE_TEXT[lang];
+    await service.keep(parseText(text, at, { locale: getDeviceLocale() }).candidates, text);
+  };
 
   return (
     <Screen
@@ -126,6 +134,17 @@ export default function Home() {
         <View style={styles.empty}>
           <AppText variant="heading">{s.home.emptyHeading}</AppText>
           <AppText tone="muted">{s.home.emptyBody}</AppText>
+          <Button
+            testID="add-example"
+            variant="secondary"
+            label={lang === 'tr' ? 'Örnek ekle' : 'Add an example'}
+            onPress={() => void addExample()}
+          />
+          <AppText variant="caption" tone="muted">
+            {lang === 'tr'
+              ? 'Üç örnek kayıt ekler, nasıl çalıştığını görürsün. İstediğini silebilir ya da kapatabilirsin.'
+              : 'Adds three sample items so you can see how it works. Close or edit them any time.'}
+          </AppText>
         </View>
       ) : null}
 

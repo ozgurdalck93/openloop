@@ -55,3 +55,20 @@ export function waitingAge(since: Date, now: Date, lang: UiLang = 'en'): string 
   if (days === 1) return f.sinceYesterday;
   return f.forDays(days);
 }
+
+/**
+ * "Waiting 3 days" for something we are waiting on someone else for. Null when it isn't a waiting
+ * loop or it was only added today. Calm on purpose — a fact, never a reproach.
+ */
+export function waitingCaption(
+  loop: { type: string; createdAt: string },
+  now: Date,
+  lang: UiLang = 'en',
+): string | null {
+  if (loop.type !== 'waiting') return null;
+  const created = new Date(loop.createdAt);
+  if (Number.isNaN(created.getTime())) return null;
+  const days = diffCalendarDays(created, now);
+  if (days < 1) return null;
+  return lang === 'tr' ? `${days} gündür bekleniyor` : `Waiting ${days} ${days === 1 ? 'day' : 'days'}`;
+}

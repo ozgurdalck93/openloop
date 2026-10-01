@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
+import { CAPTURE_SUGGESTIONS } from '@/examples/sampleLoops';
 import { getDeviceLocale, strings, type Strings } from '@/i18n';
 import { analyzeText, createHybridParser } from '@/parser';
 import { useLanguage } from '@/store/language';
@@ -114,6 +115,16 @@ export default function Capture() {
             style={styles.input}
           />
         </View>
+        {text.trim().length === 0 && voice.status !== 'listening' ? (
+          <View style={styles.suggestions}>
+            <AppText variant="label" tone="muted">{lang === 'tr' ? 'ÖRNEKLER — DOKUN' : 'TRY ONE — TAP'}</AppText>
+            {CAPTURE_SUGGESTIONS[lang].map((sentence) => (
+              <Pressable key={sentence} accessibilityRole="button" testID="capture-suggestion" onPress={() => setText(sentence)} style={styles.suggestion}>
+                <AppText tone="muted">{sentence}</AppText>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         {nothingFound ? (
           <AppText tone="muted" style={styles.hint}>
             {s.capture.nothingFoundHint}
@@ -142,4 +153,13 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, color: colors.ink, ...typography.body },
   hint: { marginTop: spacing.md },
+  suggestions: { marginTop: spacing.lg, gap: spacing.sm },
+  suggestion: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
 });

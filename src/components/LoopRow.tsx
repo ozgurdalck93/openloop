@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { Loop } from '@/engine/types';
 import { typeLabel, type UiLang } from '@/i18n';
 import { colors, hairline, loopTypeMeta, radius, spacing } from '@/theme';
-import { formatWhen } from '@/utils/format';
+import { formatWhen, waitingCaption } from '@/utils/format';
 
 import { AppText } from './AppText';
 
@@ -17,6 +17,7 @@ interface LoopRowProps {
 /** One quiet row: a small type label, the title, and when it resurfaces. Not a dashboard card. */
 export function LoopRow({ loop, now, lang = 'en', onPress }: LoopRowProps) {
   const meta = loopTypeMeta[loop.type];
+  const waiting = waitingCaption(loop, now, lang);
   return (
     <Pressable
       accessibilityRole="button"
@@ -34,6 +35,11 @@ export function LoopRow({ loop, now, lang = 'en', onPress }: LoopRowProps) {
       {loop.nextReviewAt ? (
         <AppText variant="caption" tone="muted">
           {formatWhen(new Date(loop.nextReviewAt), now, lang)}
+        </AppText>
+      ) : null}
+      {waiting ? (
+        <AppText variant="caption" tone="muted" testID="waiting-days">
+          {waiting}
         </AppText>
       ) : null}
     </Pressable>
