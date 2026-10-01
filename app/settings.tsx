@@ -16,6 +16,9 @@ import { colors, hairline, radius, spacing } from '@/theme';
 
 const two = (n: number) => String(n).padStart(2, '0');
 
+// Opens the App Store page's "Write a Review" sheet. (The in-app StoreReview prompt never appears in TestFlight.)
+const WRITE_REVIEW_URL = 'https://apps.apple.com/app/id6817759681?action=write-review';
+
 /** Notification preferences. Today: quiet hours. */
 export default function Settings() {
   const db = useDatabase();
@@ -111,6 +114,16 @@ export default function Settings() {
             <HourRow label={tr ? 'Bitiş' : 'Until'} hour={quiet.endHour} testID="quiet-end" onStep={(d) => step('endHour', d)} />
           </View>
         ) : null}
+      </View>
+
+      <View style={styles.block}>
+        <AppText variant="label" tone="muted">{tr ? 'UYGULAMA' : 'APP'}</AppText>
+        <Button
+          testID="rate-app"
+          label={tr ? 'Uygulamayı değerlendir' : 'Rate OpenLoop'}
+          variant="secondary"
+          onPress={() => void Linking.openURL(WRITE_REVIEW_URL).catch((error) => console.warn('Could not open the App Store', error))}
+        />
       </View>
     </Screen>
   );

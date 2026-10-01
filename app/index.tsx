@@ -1,5 +1,4 @@
 import { router, useFocusEffect } from 'expo-router';
-import * as StoreReview from 'expo-store-review';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -71,9 +70,6 @@ export default function Home() {
   const summary = groups ? summarizeHome(groups, lang) : '';
   const empty = groups !== null && summary === '' && groups.bring_back_later.length === 0;
   const weekly = allLoops ? weeklyCheckIn(allLoops, now) : null;
-  const rateApp = async () => {
-    if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
-  };
 
   return (
     <Screen
@@ -87,9 +83,6 @@ export default function Home() {
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.push('/data')} style={styles.rate}>
             <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Verilerim ve yedek' : 'My data & backup'}</AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => void rateApp()} style={styles.rate}>
-            <AppText variant="caption" tone="muted">{s.home.rate}</AppText>
           </Pressable>
         </View>
       }
