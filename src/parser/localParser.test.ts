@@ -597,3 +597,40 @@ describe('timingSource — did the user say it, or did we suggest it?', () => {
     expect(one('My results come out soon').timingSource).toBe('none');
   });
 });
+
+// Wednesday 23 Sep 2026, 10:00. "saat 9da" = the next 09:00 = tomorrow.
+describe('Turkish clock times as people actually type them (apostrophe optional)', () => {
+  const trParse = (text: string) => parseText(text, NOW, { locale: 'tr-TR' }).candidates;
+  const cases: Array<[string, number, number]> = [
+    ['saat 9da toplantım var', 9, 0],
+    ['saat 9’da toplantım var', 9, 0],
+    ['toplantım saat 9da', 9, 0],
+    ['yarın 9da toplantım var', 9, 0],
+    ['bugün saat 15:30’da doktor randevum var', 15, 30],
+    ['yarın 14.00 te toplantı', 14, 0],
+    ['yarın 14:00 te toplantı', 14, 0],
+    ['yarın 9.30da toplantı', 9, 30],
+  ];
+  for (const [text, hour, minute] of cases) {
+    it(`"${text}" → ${hour}:${String(minute).padStart(2, '0')}`, () => {
+      const [found] = trParse(text);
+      expect(found, text).toBeDefined();
+      expect(found.type).not.toBe('reference');
+      expect(found.timingSource).toBe('stated');
+      const when = new Date(found.nextReviewAt as string);
+      expect([when.getHours(), when.getMinutes()]).toEqual([hour, minute]);
+    });
+  }
+
+  it('"akşam 8de" is 20:00 and the time words do not stay in the title', () => {
+    const [found] = trParse('akşam 8de Ali’yi ara');
+    expect(new Date(found.nextReviewAt as string).getHours()).toBe(20);
+    expect(found.title).toBe('Ali’yi ara');
+  });
+
+  it('a date like 12.10 is still a date, not a clock time', () => {
+    const [found] = trParse('12.10 tarihinde kira öde');
+    const when = found.nextReviewAt ? new Date(found.nextReviewAt) : null;
+    expect(when === null || when.getHours() !== 12 || when.getMinutes() !== 10).toBe(true);
+  });
+});

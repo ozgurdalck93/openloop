@@ -122,12 +122,14 @@ const RE = {
     /\b(?:next month|gelecek ay\w*|onumuzdeki ay\w*|ay basi\w*|beginning of (?:the )?(?:next )?month)\b/,
   payday:
     /\b(?:(?:after|before|on|around)\s+)?pay ?day\b|\b(?:after|when) (?:i (?:get|am|'m) )?paid\b|\bmaas\w*\s+(?:sonra|yatinca|yatar\w*|alinca|gelince|gunu)\b|\bmaastan sonra\b/,
-  hhmm: /\b(?:(?:at|around|about|by|@|until|before|saat)\s*)?(\d{1,2}):(\d{2})\s*(am|pm)?(?:'?(?:te|ta|de|da|e|a))?\b/,
-  hDot: /\b(?:at|@|saat|around|about|by|before|until)\s*(\d{1,2})\.(\d{2})\s*(am|pm)?(?:'?(?:te|ta|de|da|e|a))?\b(?![./]\d)/,
+  hhmm: /\b(?:(?:at|around|about|by|@|until|before|saat)\s*)?(\d{1,2}):(\d{2})\s*(am|pm)?(?:\s*'?(?:te|ta|de|da)|'?(?:e|a))?(?![a-z])/,
+  hDot: /\b(?:at|@|saat|around|about|by|before|until)\s*(\d{1,2})\.(\d{2})\s*(am|pm)?(?:\s*'?(?:te|ta|de|da)|'?(?:e|a))?(?![a-z])(?![./]\d)/,
+  // "14.00 te" / "9.30'da" without a leading word: only with a Turkish time suffix, so "12.10" stays a date.
+  hDotSuffix: /\b(\d{1,2})\.(\d{2})\s*'?(?:te|ta|de|da)(?![a-z])/,
   hAmPm: /\b(?:(?:at|around|about|by|@|until|before)\s*)?(\d{1,2})\s*(am|pm)\b/,
   hOclock: /\b(?:(?:at|around|about|by|@|until|before)\s*)?(\d{1,2})\s*o'?clock\b/,
-  hSaat: /\bsaat\s*(\d{1,2})\b(?!\s*[:.]\d)(?:'?(?:te|ta|de|da|e|a))?/,
-  hTrSuffix: /\b(\d{1,2})'(?:te|ta|de|da)\b/,
+  hSaat: /\bsaat\s*(\d{1,2})(?!\d)(?!\s*[:.]\d)(?:'?(?:te|ta|de|da)(?![a-z])|'(?:e|a)(?![a-z]))?/,
+  hTrSuffix: /\b(\d{1,2})'?(?:te|ta|de|da)(?![a-z0-9])/,
   hAt: /\b(?:at|around|about|by|@|until|before)\s*(\d{1,2})\b(?!\s*[:.]\d)/,
   partEn:
     /\b(?:(this|in the|on the|by|by the|early|late)\s+)?(tonight|morning|afternoon|evening|night|noon|midday|lunchtime|lunch time|eod|end of (?:the )?day)\b/,
@@ -314,6 +316,7 @@ export function extractTime(folded: string, now: Date, options: ExtractOptions =
     ? null
     : (parseClock(RE.hhmm, 2, 3) ??
       parseClock(RE.hDot, 2, 3) ??
+      parseClock(RE.hDotSuffix, 2, 0) ??
       parseClock(RE.hAmPm, 0, 2) ??
       parseClock(RE.hSaat, 0, 0) ??
       parseClock(RE.hOclock, 0, 0) ??
