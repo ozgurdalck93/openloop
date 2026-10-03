@@ -118,7 +118,8 @@ export const flows = {
     await app.click(testId('when-c0-day-next'));
     hasNot(await app.text(), 'I don’t know your payday', 'editing the date must clear the payday guess');
     await app.tap('Keep track of these');
-    await app.see('BRING BACK LATER');
+    await app.see('Open Loops'); // Home first: the Review screen's type chip also says REVISIT
+    await app.see('REVISIT');
     has(await app.text(), 'Reconsider coat');
 
     // a time in the past cannot be kept

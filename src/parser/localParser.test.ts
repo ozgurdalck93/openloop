@@ -601,7 +601,7 @@ describe('timingSource — did the user say it, or did we suggest it?', () => {
 // Wednesday 23 Sep 2026, 10:00. "saat 9da" = the next 09:00 = tomorrow.
 describe('Turkish clock times as people actually type them (apostrophe optional)', () => {
   const trParse = (text: string) => parseText(text, NOW, { locale: 'tr-TR' }).candidates;
-  const cases: Array<[string, number, number]> = [
+  const cases: [string, number, number][] = [
     ['saat 9da toplantım var', 9, 0],
     ['saat 9’da toplantım var', 9, 0],
     ['toplantım saat 9da', 9, 0],
@@ -638,7 +638,7 @@ describe('Turkish clock times as people actually type them (apostrophe optional)
 // "10 Ekim küçük prens gösterisi" — a stated date with a noun phrase, no verb, no event keyword.
 describe('a stated calendar date makes an event even without an event keyword', () => {
   const trParse = (text: string) => parseText(text, at(2026, 10, 3, 10, 0), { locale: 'tr-TR' }).candidates;
-  const cases: Array<[string, number, number]> = [
+  const cases: [string, number, number][] = [
     ['10 ekim küçük prens gösterisi', 9, 10],
     ["10 Ekim'de Küçük Prens gösterisi var", 9, 10],
     ['20 kasım Ozan’ın doğum günü', 10, 20],
@@ -658,5 +658,56 @@ describe('a stated calendar date makes an event even without an event keyword', 
   });
   it('a bare weekday is still a question, never an invented item', () => {
     expect(parse('Maybe Friday.')).toHaveLength(0);
+  });
+});
+
+// Same date, however people type it: case, Turkish letters, apostrophes, dashes, dots, case suffixes.
+describe('day + Turkish month, every common spelling is the same date', () => {
+  const trParse = (text: string) => parseText(text, at(2026, 10, 3, 10, 0), { locale: 'tr-TR' }).candidates;
+  const spellings = [
+    '10 ekim',
+    '10 Ekim',
+    '10 EKİM',
+    '10 ekım',
+    "10'ekim",
+    '10’ekim',
+    '10-ekim',
+    '10–ekim',
+    '10. ekim',
+    '10.ekim',
+    "10 Ekim'de",
+    '10 Ekim’de',
+    '10 ekimde',
+    '10 Ekim’e kadar',
+  ];
+  for (const date of spellings) {
+    it(`"${date} küçük prens gösterisi" → 10 October`, () => {
+      const [found] = trParse(`${date} küçük prens gösterisi`);
+      expect(found, date).toBeDefined();
+      expect(found.type).toBe('event');
+      const when = new Date(found.nextReviewAt as string);
+      expect([when.getFullYear(), when.getMonth(), when.getDate()]).toEqual([2026, 9, 10]);
+      // the date words never stay in the title
+      expect(found.title.toLowerCase()).not.toMatch(/ekim|10/);
+    });
+  }
+
+  const months: [string, number][] = [
+    ['OCAK', 0], ['Şubat', 1], ['mart', 2], ['NİSAN', 3], ['Mayıs', 4], ['haziran', 5],
+    ['Temmuz', 6], ['AĞUSTOS', 7], ['Eylül', 8], ['EKİM', 9], ['Kasım', 10], ['ARALIK', 11],
+  ];
+  for (const [name, index] of months) {
+    it(`month name "${name}" (any case, with Turkish letters) is month ${index + 1}`, () => {
+      const [found] = trParse(`20 ${name} Ozan’ın doğum günü`);
+      expect(found, name).toBeDefined();
+      const when = new Date(found.nextReviewAt as string);
+      expect([when.getMonth(), when.getDate()]).toEqual([index, 20]);
+    });
+  }
+
+  it('does not turn ordinary words into dates ("10 market", "5 mart" stays March, "12.10" stays a date)', () => {
+    const [found] = trParse('10 market alışverişi yap');
+    const when = found?.nextReviewAt ? new Date(found.nextReviewAt) : null;
+    expect(when === null || when.getMonth() !== 2).toBe(true);
   });
 });

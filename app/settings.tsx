@@ -5,6 +5,8 @@ import { AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { PRIVACY_URL, WRITE_REVIEW_URL } from '@/config/links';
 import { Screen } from '@/components/Screen';
 import { expoNotificationsApi } from '@/notifications/expoApi';
 import { DEFAULT_QUIET_HOURS, type QuietHours } from '@/notifications/quietHours';
@@ -15,9 +17,9 @@ import { useServices } from '@/store/services';
 import { colors, hairline, radius, spacing } from '@/theme';
 
 const two = (n: number) => String(n).padStart(2, '0');
+const START_PRESETS = [20, 21, 22, 23] as const;
+const END_PRESETS = [6, 7, 8, 9] as const;
 
-// Opens the App Store page's "Write a Review" sheet. (The in-app StoreReview prompt never appears in TestFlight.)
-const WRITE_REVIEW_URL = 'https://apps.apple.com/app/id6817759681?action=write-review';
 
 /** Notification preferences. Today: quiet hours. */
 export default function Settings() {
@@ -110,10 +112,33 @@ export default function Settings() {
 
         {quiet.enabled ? (
           <View style={styles.times}>
-            <HourRow label={tr ? 'Başlangıç' : 'From'} hour={quiet.startHour} testID="quiet-start" onStep={(d) => step('startHour', d)} />
-            <HourRow label={tr ? 'Bitiş' : 'Until'} hour={quiet.endHour} testID="quiet-end" onStep={(d) => step('endHour', d)} />
+            <HourRow label={tr ? 'Başlangıç' : 'From'} hour={quiet.startHour} testID="quiet-start" presets={START_PRESETS} onPick={(h) => update({ ...quiet, startHour: h })} onStep={(d) => step('startHour', d)} />
+            <HourRow label={tr ? 'Bitiş' : 'Until'} hour={quiet.endHour} testID="quiet-end" presets={END_PRESETS} onPick={(h) => update({ ...quiet, endHour: h })} onStep={(d) => step('endHour', d)} />
           </View>
         ) : null}
+      </View>
+
+      <View style={styles.block}>
+        <AppText variant="label" tone="muted">{tr ? 'DİL' : 'LANGUAGE'}</AppText>
+        <LanguageSwitch />
+      </View>
+
+      <View style={styles.block}>
+        <AppText variant="label" tone="muted">{tr ? 'VERİLERİM' : 'MY DATA'}</AppText>
+        <AppText tone="muted">
+          {tr ? 'Her şey bu cihazda kalır. İstediğin zaman bir kopyasını dışa aktarabilirsin.' : 'Everything stays on this device. Export a copy whenever you like.'}
+        </AppText>
+        <Button testID="open-data" label={tr ? 'Verilerim ve yedek' : 'My data & backup'} variant="secondary" onPress={() => router.push('/data')} />
+      </View>
+
+      <View style={styles.block}>
+        <AppText variant="label" tone="muted">{tr ? 'GİZLİLİK' : 'PRIVACY'}</AppText>
+        <Button
+          testID="open-privacy"
+          label={tr ? 'Gizlilik Politikası' : 'Privacy Policy'}
+          variant="secondary"
+          onPress={() => void Linking.openURL(PRIVACY_URL).catch((error) => console.warn('Could not open the privacy policy', error))}
+        />
       </View>
 
       <View style={styles.block}>
@@ -129,8 +154,24 @@ export default function Settings() {
   );
 }
 
-function HourRow({ label, hour, testID, onStep }: { label: string; hour: number; testID: string; onStep: (direction: 1 | -1) => void }) {
+interface HourRowProps {
+  label: string;
+  hour: number;
+  testID: string;
+  /** Common choices, one tap. The arrows stay for anything else. */
+  presets: readonly number[];
+  onPick: (hour: number) => void;
+  onStep: (direction: 1 | -1) => void;
+}
+
+function HourRow({ label, hour, testID, presets, onPick, onStep }: HourRowProps) {
   return (
+    <View style={styles.hourBlock}>
+      <View style={styles.chips}>
+        {presets.map((h) => (
+          <Chip key={h} testID={`${testID}-preset-${h}`} label={`${two(h)}:00`} selected={hour === h} onPress={() => onPick(h)} />
+        ))}
+      </View>
     <View style={styles.row}>
       <AppText tone="muted" style={styles.rowLabel}>{label}</AppText>
       <Pressable testID={`${testID}-prev`} accessibilityRole="button" accessibilityLabel={`${label} −1`} hitSlop={6} onPress={() => onStep(-1)} style={styles.arrow}>
@@ -141,6 +182,7 @@ function HourRow({ label, hour, testID, onStep }: { label: string; hour: number;
         <AppText variant="bodyStrong">›</AppText>
       </Pressable>
     </View>
+    </View>
   );
 }
 
@@ -148,7 +190,9 @@ const styles = StyleSheet.create({
   block: { marginTop: spacing.xl, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rowLabel: { width: 84 },
-  times: { gap: spacing.sm, marginTop: spacing.sm },
+  times: { gap: spacing.lg, marginTop: spacing.sm },
+  hourBlock: { gap: spacing.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   arrow: {
     width: 36,
     height: 36,

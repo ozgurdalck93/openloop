@@ -268,7 +268,7 @@ const STRINGS: Record<UiLang, Strings> = {
       emptyBody: 'Tell me a task, something you’re waiting for, or something you want brought back later.',
       cta: 'Tell me what’s going on',
       rate: 'Rate OpenLoop',
-      sections: { needs_you: 'NEEDS YOU', waiting: 'WAITING', coming_up: 'COMING UP', bring_back_later: 'BRING BACK LATER' },
+      sections: { needs_you: 'NEEDS YOU', waiting: 'WAITING', coming_up: 'COMING UP', bring_back_later: 'REVISIT' },
       summary: {
         needsYou: (n) => (n === 1 ? '1 needs you' : `${n} need you`),
         waiting: (n) => (n === 1 ? '1 is waiting' : `${n} are waiting`),
@@ -361,7 +361,7 @@ const STRINGS: Record<UiLang, Strings> = {
       later: 'Later',
     },
     snooze: { in15Min: 'In 15 minutes', tomorrowMorning: 'Tomorrow morning', thisWeekend: 'This weekend', nextWeek: 'Next week' },
-    type: { task: 'TASK', waiting: 'WAITING', event: 'EVENT', promise: 'PROMISE', return_later: 'RETURN LATER', reference: 'REFERENCE' },
+    type: { task: 'TASK', waiting: 'WAITING', event: 'EVENT', promise: 'PROMISE', return_later: 'REVISIT', reference: 'REFERENCE' },
     timeline: {
       captured: 'Captured',
       created: 'Created',

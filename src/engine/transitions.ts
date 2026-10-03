@@ -10,6 +10,7 @@
  * Safety (spec): the engine never contacts anyone, sends anything, buys
  * anything or deletes user content. "Dismiss" archives; it does not delete.
  */
+import type { UiLang } from '@/i18n';
 import type { LoopCandidate } from '@/parser/types';
 import { formatWhen } from '@/utils/format';
 import { toIso } from '@/utils/time';
@@ -213,7 +214,13 @@ export function reopenLoop(loop: Loop, ctx: EngineContext): EngineResult {
 // ---- TASK → WAITING ---------------------------------------------------------------------------
 
 /** "HR reply" when we know who (and what) we are waiting for; otherwise it points back at the task. */
-export function waitingTitleFromTask(task: Loop, entityName: string | null = task.entityName, expected = 'reply'): string {
+export function waitingTitleFromTask(
+  task: Loop,
+  entityName: string | null = task.entityName,
+  expected = 'reply',
+  lang: UiLang = 'en',
+): string {
+  if (lang === 'tr') return entityName ? `${entityName} ${expected === 'reply' ? 'yanıtı' : expected}` : `Yanıt: ${task.title}`;
   return entityName ? `${entityName} ${expected}` : `Response to: ${task.title}`;
 }
 
@@ -247,7 +254,7 @@ export function completeTaskAndWait(task: Loop, ctx: EngineContext, options: Wai
   const waiting = newLoop(ctx, {
     captureId: task.captureId,
     type: 'waiting',
-    title: options.title?.trim() || waitingTitleFromTask(task, entityName, expected),
+    title: options.title?.trim() || waitingTitleFromTask(task, entityName, expected, ctx.lang),
     rawContext: task.rawContext,
     entityName,
     expectedEvent: expected,
@@ -288,7 +295,14 @@ export function followUp(waiting: Loop, ctx: EngineContext, draft?: string): Eng
   const task = newLoop(ctx, {
     captureId: waiting.captureId,
     type: 'task',
-    title: waiting.entityName ? `Follow up with ${waiting.entityName}` : `Follow up: ${waiting.title}`,
+    title:
+      ctx.lang === 'tr'
+        ? waiting.entityName
+          ? `${waiting.entityName} ile takip`
+          : `Takip: ${waiting.title}`
+        : waiting.entityName
+          ? `Follow up with ${waiting.entityName}`
+          : `Follow up: ${waiting.title}`,
     rawContext: draft ? `${waiting.rawContext ? `${waiting.rawContext}\n\n` : ''}${draft}` : waiting.rawContext,
     entityName: waiting.entityName,
     nextReviewAt: suggestion.at ? toIso(suggestion.at) : null,

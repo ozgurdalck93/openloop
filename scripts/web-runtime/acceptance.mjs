@@ -250,7 +250,8 @@ export const acceptance = {
     await captureText(app, 'I like the green coat but the sleeves run short. Bring this back after payday.');
     await app.see('Here’s what’s still open');
     await app.tap('Keep track of these');
-    await app.see('BRING BACK LATER');
+    await app.see('Open Loops'); // Home first: the Review screen's type chip also says REVISIT
+    await app.see('REVISIT');
     await openLoop(app, 'Reconsider green coat');
     assert.deepEqual(await actionLabels(app), ['Act now', 'Bring back later', 'Resolve', 'Edit', 'Not relevant anymore']);
     await doAction(app, 'bring_back_later', false);

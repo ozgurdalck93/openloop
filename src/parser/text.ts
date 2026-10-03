@@ -26,6 +26,12 @@ export function normalizeInput(text: string): string {
 
 const isDigit = (c: string | undefined) => c !== undefined && c >= '0' && c <= '9';
 
+/** A 1–2 digit day just before a period ("10" in "10. ekim"), not part of a longer number. */
+const ORDINAL_DAY_BEFORE = /(?:^|[^\d])\d{1,2}$/;
+/** A month name right after the period (Turkish or English, any case). */
+const MONTH_AFTER =
+  /^\s*(?:ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik|january|february|march|april|may|june|july|august|september|october|november|december)(?![\p{L}])/iu;
+
 /** Sentences, split on . ! ? … newlines and semicolons — but not inside "15.30" or "3,5". Terminators are excluded from spans. */
 export function splitSentences(text: string): Span[] {
   const spans: Span[] = [];
@@ -47,6 +53,11 @@ export function splitSentences(text: string): Span[] {
     } else if (c === '.' || c === '!' || c === '?' || c === '…') {
       if (c === '.' && isDigit(text[i - 1]) && isDigit(text[i + 1])) {
         i += 1; // 15.30 — a time or decimal, not a sentence end
+        continue;
+      }
+      // "10. ekim" — a Turkish ordinal day, not a sentence end.
+      if (c === '.' && ORDINAL_DAY_BEFORE.test(text.slice(Math.max(0, i - 3), i)) && MONTH_AFTER.test(text.slice(i + 1, i + 14))) {
+        i += 1;
         continue;
       }
       let j = i;

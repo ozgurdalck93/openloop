@@ -14,6 +14,7 @@ import { availableActions, timelineLabel, type LoopAction } from '@/engine/sugge
 import { EngineError, type LoopEdits, type WaitingOptions } from '@/engine/transitions';
 import { CLOSED_STATUSES, type Loop } from '@/engine/types';
 import { strings, type Strings } from '@/i18n';
+import { localizeNote } from '@/i18n/notes';
 import type { ActionOutcome, LoopBundle } from '@/services/loopService';
 import { ServiceError } from '@/services/loopService';
 import { useChangeVersion } from '@/store/changes';
@@ -251,7 +252,7 @@ export default function LoopDetail() {
                 <AppText>{timelineLabel(event.eventType, lang)}</AppText>
                 <AppText variant="caption" tone="muted">
                   {formatWhen(new Date(event.createdAt), now, lang)}
-                  {event.note ? ` · ${event.note}` : ''}
+                  {event.note ? ` · ${localizeNote(event.note, lang)}` : ''}
                 </AppText>
               </View>
             ))}

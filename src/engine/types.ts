@@ -1,3 +1,4 @@
+import type { UiLang } from '@/i18n';
 /**
  * Domain model. Mirrors 02_OPENLOOP_AUTOMATION_ENGINE.md and the SQLite schema
  * in 06_OPENLOOP_CLAUDE_CODE_MASTER_PROMPT.md. TypeScript uses camelCase; the
@@ -104,6 +105,8 @@ export const MILESTONE_LABEL: Record<Milestone, string> = {
 export interface EngineContext {
   now: Date;
   newId: () => string;
+  /** Language for text the engine generates as TITLES (notes stay English and are translated on display). Default 'en'. */
+  lang?: UiLang;
 }
 
 /**

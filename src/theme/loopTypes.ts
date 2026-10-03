@@ -14,6 +14,6 @@ export const loopTypeMeta: Record<LoopType, LoopTypeMeta> = {
   waiting: { label: 'WAITING', color: '#8F6224', tint: '#F3E9D8' },
   event: { label: 'EVENT', color: '#48647A', tint: '#E1E9EF' },
   promise: { label: 'PROMISE', color: '#9A4F3B', tint: '#F2E2DC' },
-  return_later: { label: 'RETURN LATER', color: '#66733A', tint: '#E8ECD8' },
+  return_later: { label: 'REVISIT', color: '#66733A', tint: '#E8ECD8' },
   reference: { label: 'REFERENCE', color: '#767063', tint: '#ECE8DF' },
 };

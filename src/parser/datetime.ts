@@ -80,13 +80,16 @@ const MONTH_ALT = Object.keys(MONTHS).sort((a, b) => b.length - a.length).join('
 const WEEKDAY_EN_ALT = 'monday|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sunday';
 const WEEKDAY_TR_ALT = 'pazartesi|sali|carsamba|persembe|cumartesi|cuma|pazar';
 const PREP = '(?:(?:on|by|before|until|till|for|due)\\s+)?';
-const TR_CASE = "(?:'?(?:ya|ye|a|e|da|de|ta|te|dan|den|in|nin|yi|i|ki))?";
+// Between day and month: a space ("10 ekim"), or how people really type Turkish dates: 10'ekim, 10’ekim, 10-ekim, 10. ekim.
+// (Typographic apostrophes and en dashes are already folded to ' and - before matching.)
+const DAY_MONTH_SEP = "(?:\\s+|\\s*['\\-.]\\s*)";
+const TR_CASE ="(?:'?(?:ya|ye|a|e|da|de|ta|te|dan|den|in|nin|yi|i|ki))?";
 
 const RE = {
   laterToday:
     /\b(?:later today|later this (?:morning|afternoon|evening)|bugun (?:ilerleyen saatlerde|daha sonra)|ilerleyen saatlerde|birazdan|az sonra|in a bit|shortly|in a while)\b/,
   dateDM: new RegExp(
-    `\\b${PREP}(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(${MONTH_ALT})(?:'(?:ta|te|da|de|a|e|dan|den|in|ye|ya))?(?:\\s+(\\d{4}))?(?:\\s+kadar)?\\b`,
+    `\\b${PREP}(\\d{1,2})(?:st|nd|rd|th)?${DAY_MONTH_SEP}(?:of\\s+)?(${MONTH_ALT})(?:'?(?:ta|te|da|de|a|e|dan|den|in|ye|ya))?(?:\\s+(\\d{4}))?(?:\\s+kadar)?\\b`,
   ),
   dateMD: new RegExp(`\\b${PREP}(${MONTH_ALT})\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b(?:,?\\s+(\\d{4}))?`),
   dateIso: /\b(\d{4})-(\d{2})-(\d{2})\b/,

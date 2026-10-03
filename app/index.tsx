@@ -89,9 +89,6 @@ export default function Home() {
           <Pressable accessibilityRole="button" onPress={() => router.push('/timeline')} style={styles.rate}>
             <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Zaman görünümü' : 'Time view'}</AppText>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/data')} style={styles.rate}>
-            <AppText variant="caption" tone="muted">{lang === 'tr' ? 'Verilerim ve yedek' : 'My data & backup'}</AppText>
-          </Pressable>
         </View>
       }
     >

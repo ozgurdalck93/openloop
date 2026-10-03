@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Linking, Share, StyleSheet, View } from 'react-native';
+import { PRIVACY_URL } from '@/config/links';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
@@ -10,7 +11,6 @@ import { useDatabase } from '@/store/database';
 import { useLanguage } from '@/store/language';
 import { spacing } from '@/theme';
 
-const PRIVACY_URL = 'https://ozgurdalck93.github.io/openloop/privacy.html';
 const asCsv =(loops: readonly Loop[]) => ['title,type,status,person_or_company,next_review_at,created_at,resolved_at,note', ...loops.map((loop) => [loop.title, loop.type, loop.status, loop.entityName, loop.nextReviewAt, loop.createdAt, loop.resolvedAt, loop.rawContext].map((v) => `"${String(v ?? '').replaceAll('"', '""')}"`).join(','))].join('\n');
 
 export default function DataScreen() {

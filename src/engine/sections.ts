@@ -4,7 +4,7 @@
  *   NEEDS YOU         the next action belongs to the user (tasks, promises)
  *   WAITING           dependent on another person / company / system
  *   COMING UP         future events and expected outcomes
- *   BRING BACK LATER  intentionally parked
+ *   REVISIT           intentionally parked
  *
  * References never appear on Home: they exist to be remembered, not resurfaced.
  */

@@ -131,7 +131,7 @@ export function createLoopService(deps: ServiceDeps): LoopService {
     return { loop, parent, children, events };
   }
 
-  const context = (): EngineContext => ({ now: now(), newId });
+  const context = (): EngineContext => ({ now: now(), newId, lang });
 
   /** Persist a result, then re-sync reminders. Empty results store nothing. */
   async function commit(result: EngineResult, ctx: EngineContext): Promise<boolean> {
