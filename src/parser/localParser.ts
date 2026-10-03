@@ -102,14 +102,23 @@ const blank = (text: string, spans: Span[]): string => {
   return chars.join('');
 };
 
+// An explicit calendar date (a month name or 12.10 / 12/10) — not a duration like "5 business days".
+const EXPLICIT_DATE =
+  /(?:ocak|subat|mart|nisan|mayis|haziran|temmuz|agustos|eylul|ekim|kasim|aralik|january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)|d{1,2}[./]d{1,2}/;
+
 // ---- step 2: analyse a piece ------------------------------------------------------------
 
 function analysePiece(src: Source, span: Span, lang: Lang): Piece {
   const folded = src.folded.slice(span.start, span.end);
   const time = extractTime(folded, src.now, { dateOrder: lang === 'tr' ? 'dmy' : src.dateOrder });
   const timeSpans = time?.spans ?? [];
-  const cue = classifyCue(folded, blank(folded, timeSpans), time !== null, lang);
   const content = contentWords(folded, timeSpans).length;
+  let cue = classifyCue(folded, blank(folded, timeSpans), time !== null, lang);
+  // A stated date with something to say about it and no other cue ("10 ekim küçük prens gösterisi") is an event.
+  // Weak on purpose: the Review screen shows it and the user can change the type. A bare "Friday" stays a question.
+  if (!cue && time && time.at !== null && time.milestone === null && content >= 2 && EXPLICIT_DATE.test(folded)) {
+    cue = { kind: 'event', match: 'dated', strength: 0.5 };
+  }
   const kind: PieceKind = cue ? cue.kind : content >= 3 ? 'info' : 'fragment';
   const continuation = cue?.kind === 'wait' && isBareContinuation(folded);
   return { span, lang, kind, cue, time, content, hedged: HEDGE_RE.test(folded), continuation };

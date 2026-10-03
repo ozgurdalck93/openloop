@@ -111,8 +111,8 @@ export const isBareContinuation = (folded: string): boolean =>
   BARE_CONTINUATION.test(folded.trim().replace(/[.!?,]+$/, ''));
 /** Weaker: an event noun only counts when a time expression sits next to it. */
 const EVENT_NOUN: RegExp[] = [
-  /\b(?:exam|flight|interview|appointment|meeting|surgery|check-?up|concert|match|wedding|launch|release)\b/,
-  /\b(?:sinav|ucus|mulakat|randevu|toplanti|ameliyat|konser|dugun|lansman)\w*\b/,
+  /\b(?:exam|flight|interview|appointment|meeting|surgery|check-?up|concert|match|wedding|launch|release|show|play|party|birthday|anniversary|festival|dinner|ceremony|graduation)\b/,
+  /\b(?:sinav|ucus|mulakat|randevu|toplanti|ameliyat|konser|dugun|lansman|gosteri|tiyatro|parti|kutlama|festival|mac|dogum gun|yildonum|mezuniyet|toren|yemek)\w*\b/,
 ];
 
 // ---- TASK: the user needs to do something ------------------------------------------------

@@ -634,3 +634,29 @@ describe('Turkish clock times as people actually type them (apostrophe optional)
     expect(when === null || when.getHours() !== 12 || when.getMinutes() !== 10).toBe(true);
   });
 });
+
+// "10 Ekim küçük prens gösterisi" — a stated date with a noun phrase, no verb, no event keyword.
+describe('a stated calendar date makes an event even without an event keyword', () => {
+  const trParse = (text: string) => parseText(text, at(2026, 10, 3, 10, 0), { locale: 'tr-TR' }).candidates;
+  const cases: Array<[string, number, number]> = [
+    ['10 ekim küçük prens gösterisi', 9, 10],
+    ["10 Ekim'de Küçük Prens gösterisi var", 9, 10],
+    ['20 kasım Ozan’ın doğum günü', 10, 20],
+  ];
+  for (const [text, month, day] of cases) {
+    it(`"${text}" → an event on ${day}/${month + 1}`, () => {
+      const [found] = trParse(text);
+      expect(found, text).toBeDefined();
+      expect(found.type).toBe('event');
+      const when = new Date(found.nextReviewAt as string);
+      expect([when.getMonth(), when.getDate()]).toEqual([month, day]);
+    });
+  }
+
+  it('a duration is not a date: "5 business days" still just restates the wait', () => {
+    expect(parse("I'm waiting for the refund, they said 5 business days")).toHaveLength(1);
+  });
+  it('a bare weekday is still a question, never an invented item', () => {
+    expect(parse('Maybe Friday.')).toHaveLength(0);
+  });
+});
